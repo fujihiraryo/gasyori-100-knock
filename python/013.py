@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 
-def median_filter(img, K=3):
+def maxmin_filter(img, K=3):
     H, W, C = img.shape
     # padding
     pad = K//2
@@ -13,12 +13,14 @@ def median_filter(img, K=3):
     for h in range(H):
         for w in range(W):
             for c in range(C):
-                img3[h+pad, w+pad, c] = np.median(img2[h:h+K, w:w+K, c])
+                max_pixel = np.max(img2[h:h+K, w:w+K, c])
+                min_pixel = np.min(img2[h:h+K, w:w+K, c])
+                img3[h+pad, w+pad, c] = max_pixel-min_pixel
     img3 = np.clip(img3, 0, 255)
     img3 = img3[pad:pad+H, pad:pad+W].astype(np.uint8)
     return img3
 
 
-img = cv2.imread("image/imori_noise.jpg")
-img2 = median_filter(img)
-cv2.imwrite("image/010.jpg", img2)
+img = cv2.imread("image/eevee.png")
+img2 = maxmin_filter(img)
+cv2.imwrite("image/013.jpg", img2)
