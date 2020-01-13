@@ -16,5 +16,5 @@ def parrallel(img0, dh, dw):
 
 
 img0 = cv2.imread("image/icon.jpg")
-img1 = parrallel(img0, 50, -100)
+img1 = parrallel(img0, 100, 200)
 cv2.imwrite("image/028.jpg", img1)
