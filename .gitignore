@@ -1,1 +1,2 @@
-tempCodeRunnerFile.py
+image/*.png
+!image/sample.png
