@@ -2,30 +2,53 @@ import cv2
 import numpy as np
 
 
-def gaussian_filter(img, K=3, sigma=1.3):
-    H, W, C = img.shape
+def noise(image, p=0.05):
+    h, w, _ = image.shape
+    result = image.copy()
+    for i in range(h):
+        for j in range(w):
+            if np.random.rand() < p:
+                result[i][j] = np.random.randint(0, 256, 3)
+    return result
+
+
+def gaussian_filter(image, size=2, sigma=1.3):
+    h, w, _ = image.shape
     # padding
-    pad = K//2
-    img2 = np.zeros((H+pad*2, W+pad*2, C), dtype=np.float)
-    img2[pad:pad+H, pad:pad+W] = img.copy().astype(np.float)
+    pad = np.zeros((h + 2 * size, w + 2 * size, 3), dtype=np.float)
+    pad[size : h + size, size : w + size, :] = image.copy().astype(np.float)
     # kernel
-    kernel = np.zeros((K, K), dtype=np.float)
-    for x in range(-pad, -pad+K):
-        for y in range(-pad, -pad+K):
-            kernel[y+pad, x+pad] = np.exp(-(x**2+y**2)/(2*(sigma**2)))
-    kernel /= (2*np.pi*(sigma**2))
+    kernel = np.zeros((2 * size + 1, 2 * size + 1), dtype=np.float)
+    for i in range(2 * size + 1):
+        for j in range(2 * size + 1):
+            x = i - size
+            y = j - size
+            kernel[i][j] = np.exp(-(x ** 2 + y ** 2) / (2 * sigma ** 2))
     kernel /= kernel.sum()
     # filtering
-    img3 = img2.copy()
-    for h in range(H):
-        for w in range(W):
-            for c in range(C):
-                img3[h+pad, w+pad, c] = np.sum(kernel*img2[h:h+K, w:w+K, c])
-    img3 = np.clip(img3, 0, 255)
-    img3 = img3[pad:pad+H, pad:pad+W].astype(np.uint8)
-    return img3
+    result = image.copy().astype(np.float)
+    for i in range(h):
+        for j in range(w):
+            for k in range(3):
+                result[i][j][k] = (
+                    kernel * pad[i : i + 2 * size + 1, j : j + 2 * size + 1, k]
+                ).sum()
+    return np.clip(result, 0, 255).astype(np.uint8)
 
 
-img = cv2.imread("image/imori_noise.jpg")
-img2 = gaussian_filter(img)
-cv2.imwrite("image/009.jpg", img2)
+def add_text(image, text):
+    result = image.copy()
+    cv2.putText(result, text, (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
+    return result
+
+
+origin = cv2.imread("image/sample.png")
+noised = noise(origin, p=0.05)
+vlst = []
+for size in (1, 2, 3):
+    hlst = [add_text(origin, "origin"), add_text(noised, "noised")]
+    for sigma in (1, 1.5, 2):
+        filtered = gaussian_filter(noised, size=size, sigma=sigma)
+        hlst.append(add_text(filtered, f"size={size}, sigma={sigma}"))
+    vlst.append(cv2.hconcat(hlst))
+cv2.imwrite("image/009.png", cv2.vconcat(vlst))

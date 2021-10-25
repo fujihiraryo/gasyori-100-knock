@@ -1,13 +1,25 @@
 import cv2
-grid=8
-img=cv2.imread("image/imori.jpg")
-H,W,C=img.shape
-for h in range(H):
-    for w in range(W):
-        h_range=range((h//grid)*grid,(h//grid+1)*grid)
-        w_range=range((w//grid)*grid,(w//grid+1)*grid)
-        R=max([img[h0][w0][2] for h0 in h_range for w0 in w_range])
-        G=max([img[h0][w0][1] for h0 in h_range for w0 in w_range])
-        B=max([img[h0][w0][0] for h0 in h_range for w0 in w_range])
-        img[h][w]=[B,G,R]
-cv2.imwrite("image/008.png",img)
+import numpy as np
+
+
+def avg_pool(image, size):
+    h, w, _ = image.shape
+    pool = np.zeros((h // size, w // size, 3)).astype(np.uint8)
+    for i in range(h // size):
+        for j in range(w // size):
+            pool[i, j] = image[
+                i * size : (i + 1) * size, j * size : (j + 1) * size
+            ].max(axis=(0, 1))
+    result = image.copy()
+    for i in range(h):
+        for j in range(w):
+            result[i, j] = pool[i // size, j // size]
+    return result
+
+
+image = cv2.imread("image/sample.png")
+lst = []
+for i in range(4):
+    size = pow(2, i + 1)
+    lst.append(avg_pool(image, size))
+cv2.imwrite("image/008.png", cv2.hconcat(lst))

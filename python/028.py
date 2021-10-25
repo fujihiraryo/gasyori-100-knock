@@ -2,19 +2,25 @@ import cv2
 import numpy as np
 
 
-def parrallel(img0, dh, dw):
-    H, W, C = img0.shape
-    img1 = np.zeros((H, W, C))
-    for h in range(H):
-        for w in range(W):
-            for c in range(C):
-                h0 = h - dh
-                w0 = w - dw
-                if 0 <= h0 < H and 0 <= w0 < W:
-                    img1[h][w][c] = img0[h - dh][w - dw][c]
-    return img1
+def affine(image, matrix):
+    h, w, _ = image.shape
+    result = np.zeros_like(image)
+    inverse = np.linalg.inv(matrix)
+    for i in range(h):
+        for j in range(w):
+            x, y, _ = np.dot(inverse, np.array([i, j, 1])).astype(np.int)
+            if 0 <= x < h and 0 <= y < w:
+                result[i, j] = image[x, y]
+            else:
+                result[i, j] = 0
+    return result
 
 
-img0 = cv2.imread("image/icon.jpg")
-img1 = parrallel(img0, 100, 50)
-cv2.imwrite("image/028.jpg", img1)
+def shift(image, dx, dy):
+    matrix = np.array([[1, 0, dx], [0, 1, dy], [0, 0, 1]])
+    return affine(image, matrix)
+
+
+origin = cv2.imread("image/sample.png")
+result = shift(origin, 100, 200)
+cv2.imwrite("image/028.png", result)

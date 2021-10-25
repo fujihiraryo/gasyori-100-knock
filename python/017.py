@@ -2,25 +2,33 @@ import cv2
 import numpy as np
 
 
-def laplacian_filter(img, K=3):
-    H, W, C = img.shape
+def laplacian_filter(image):
+    h, w = image.shape
     # padding
-    pad = K//2
-    img2 = np.zeros((H+pad*2, W+pad*2, C), dtype=np.float)
-    img2[pad:pad+H, pad:pad+W] = img.copy().astype(np.float)
+    pad = np.zeros((h + 3, w + 3), dtype=np.float)
+    pad[1 : h + 1, 1 : w + 1] = image.copy().astype(np.float)
     # kernel
     kernel = np.array([[0, 1, 0], [1, -4, 1], [0, 1, 0]])
     # filtering
-    img3 = img2.copy()
-    for h in range(H):
-        for w in range(W):
-            for c in range(C):
-                img3[h+pad, w+pad, c] = np.sum(kernel*img2[h:h+K, w:w+K, c])
-    img3 = np.clip(img3, 0, 255)
-    img3 = img3[pad:pad+H, pad:pad+W].astype(np.uint8)
-    return img3
+    result = image.copy().astype(np.float)
+    for i in range(h):
+        for j in range(w):
+            result[i, j] = np.sum(pad[i : i + 3, j : j + 3] * kernel)
+    result = result.clip(0, 255).astype(np.uint8)
+    result[result > 10] = 255
+    result[result <= 10] = 0
+    return result
 
 
-img = cv2.imread("image/eevee.png")
-img2 = laplacian_filter(img)
-cv2.imwrite("image/017.jpg", img2)
+def add_text(image, text):
+    result = image.copy()
+    cv2.putText(result, text, (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
+    return result
+
+
+origin = cv2.imread("image/sample.png")
+origin = cv2.cvtColor(origin, cv2.COLOR_BGR2GRAY)
+lst = [add_text(origin, "origin")]
+result = laplacian_filter(origin)
+lst.append(result)
+cv2.imwrite("image/017.png", cv2.hconcat(lst))

@@ -2,23 +2,30 @@ import cv2
 import numpy as np
 
 
-def rot(img0, arg):
-    arg = np.deg2rad(arg)
-    H, W, C = img0.shape
-    img1 = np.zeros((H, W, C))
-    mh = H // 2
-    mw = W // 2
-    for h in range(H):
-        for w in range(W):
-            for c in range(C):
-                w0 = mw + np.cos(arg) * (w - mw) - np.sin(arg) * (h - mh)
-                h0 = mh + np.sin(arg) * (w - mw) + np.cos(arg) * (h - mh)
-                h0, w0 = int(h0), int(w0)
-                if 0 <= w0 < W - 1 and 0 <= h0 < H - 1:
-                    img1[h][w][c] = img0[h0][w0][c]
-    return img1
+def affine(image, matrix):
+    h, w, _ = image.shape
+    result = np.zeros_like(image)
+    inverse = np.linalg.inv(matrix)
+    for i in range(h):
+        for j in range(w):
+            x, y, _ = np.dot(inverse, np.array([i, j, 1])).astype(np.int)
+            if 0 <= x < h and 0 <= y < w:
+                result[i, j] = image[x, y]
+            else:
+                result[i, j] = 0
+    return result
 
 
-img0 = cv2.imread("image/icon.jpg")
-img1 = rot(img0, 30)
-cv2.imwrite("image/030.jpg", img1)
+def rotate(image, deg):
+    h, w, _ = image.shape
+    rad = np.deg2rad(deg)
+    mat_rot = np.array(
+        [[np.cos(rad), -np.sin(rad), 0], [np.sin(rad), np.cos(rad), 0], [0, 0, 1]]
+    )
+    mat_sft = np.array([[1, 0, h // 2], [0, 1, w // 2], [0, 0, 1]])
+    return affine(image, mat_sft @ mat_rot @ np.linalg.inv(mat_sft))
+
+
+origin = cv2.imread("image/sample.png")
+result = rotate(origin, 30)
+cv2.imwrite("image/030.png", result)

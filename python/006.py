@@ -1,11 +1,14 @@
 import cv2
-img=cv2.imread("image/eevee.png")
-H,W,C=img.shape
-for h in range(H):
-    for w in range(W):
-        [B,G,R]=img[h][w]
-        B=((B//64)+1)*32
-        G=((G//64)+1)*32
-        R=((R//64)+1)*32
-        img[h][w]=[B,G,R]
-cv2.imwrite("image/006.png",img)
+
+
+def subtract_color(image, div):
+    thresh = 256 // div
+    return image // thresh * thresh + thresh // 2
+
+
+image = cv2.imread("image/sample.png")
+lst = [image.copy() for _ in range(8)]
+for i in range(8):
+    div = pow(2, 8 - i)
+    lst[i] = subtract_color(image, div)
+cv2.imwrite("image/006.png", cv2.hconcat(lst))

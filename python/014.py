@@ -2,33 +2,36 @@ import cv2
 import numpy as np
 
 
-def differential_filter(img):
-    K = 3
-    H, W, C = img.shape
+def differential_filter(image):
+    h, w, _ = image.shape
     # padding
-    pad = K//2
-    img2 = np.zeros((H+pad*2, W+pad*2, C), dtype=np.float)
-    img2[pad:pad+H, pad:pad+W] = img.copy().astype(np.float)
+    pad = np.zeros((h + 2, w + 2, 3), dtype=np.float)
+    pad[1 : h + 1, 1 : w + 1, :] = image.copy().astype(np.float)
     # kernel
-    kernel_v = np.array([[0, -1, 0], [0, 1, 0], [0, 0, 0]])
-    kernel_h = np.array([[0, 0, 0], [-1, 1, 0], [0, 0, 0]])
+    kernel_x = np.array([[0, 0, 0], [-1, 1, 0], [0, 0, 0]])
+    kernel_y = kernel_x.T
     # filtering
-    img_v = img2.copy()
-    img_h = img2.copy()
-    for h in range(H):
-        for w in range(W):
-            for c in range(C):
-                img_v[h+pad, w+pad, c] = np.sum(kernel_v*img2[h:h+K, w:w+K, c])
-                img_h[h+pad, w+pad, c] = np.sum(kernel_h*img2[h:h+K, w:w+K, c])
-    img_v = np.clip(img_v, 0, 255)
-    img_h = np.clip(img_h, 0, 255)
-    img_v = img_v[pad:pad+H, pad:pad+W].astype(np.uint8)
-    img_h = img_h[pad:pad+H, pad:pad+W].astype(np.uint8)
-    return img_v, img_h
+    result_x = image.copy().astype(np.float)
+    result_y = image.copy().astype(np.float)
+    for i in range(h):
+        for j in range(w):
+            for k in range(3):
+                result_x[i][j][k] = (kernel_x * pad[i : i + 3, j : j + 3, k]).sum()
+                result_y[i][j][k] = (kernel_y * pad[i : i + 3, j : j + 3, k]).sum()
+    result_x = result_x.clip(0, 255).astype(np.uint8)
+    result_y = result_y.clip(0, 255).astype(np.uint8)
+    return result_x, result_y
 
 
-img = cv2.imread("image/eevee.png")
-img_v, img_h = differential_filter(img)
-cv2.imwrite("image/014_v.jpg", img_v)
-cv2.imwrite("image/014_h.jpg", img_h)
-print("complete")
+def add_text(image, text):
+    result = image.copy()
+    cv2.putText(result, text, (10, 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
+    return result
+
+
+origin = cv2.imread("image/sample.png")
+lst = [add_text(origin, "origin")]
+diff_x, diff_y = differential_filter(origin)
+lst.append(add_text(diff_x, "diff_x"))
+lst.append(add_text(diff_y, "diff_y"))
+cv2.imwrite("image/014.png", cv2.hconcat(lst))

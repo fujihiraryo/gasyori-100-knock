@@ -1,12 +1,24 @@
 import cv2
-import matplotlib.pyplot as plt
-img=cv2.imread("image/imori.jpg")
-H,W,C=img.shape
-gray_list=[]
-for h in range(H):
-    for w in range(W):
-        [B,G,R]=img[h][w]
-        gray=0.2126*R+0.7152*G+0.0722*B
-        gray_list.append(gray)
-plt.hist(gray_list)
-plt.savefig("image/004.png")
+import numpy as np
+
+# otsu's binarization
+image = cv2.imread("image/sample.png")
+coef = (0.2126, 0.7152, 0.0722)
+image = np.dot(image, coef).astype(np.uint8)
+image = np.clip(image, 0, 255)
+max_var = 0
+best_thresh = 0
+for thresh in range(1, 254):
+    size0 = image[image <= thresh].size
+    size1 = image[image > thresh].size
+    if size0 == 0 or size1 == 0:
+        continue
+    mean0 = image[image <= thresh].mean()
+    mean1 = image[image > thresh].mean()
+    var = (mean0 - mean1) ** 2 * size0 * size1 / (size0 + size1) ** 2
+    if var > max_var:
+        max_var = var
+        best_thresh = thresh
+print("threshold:", best_thresh)
+image = image // best_thresh * 255
+cv2.imwrite("image/004.png", image)

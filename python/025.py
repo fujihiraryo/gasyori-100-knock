@@ -1,19 +1,19 @@
 import cv2
 import numpy as np
 
-def nearest_neighbor(img,a=1.5):
-    H, W, C = img.shape
-    H2,W2=int(H*a),int(W*a)
-    img2=np.zeros((H2,W2,C))
-    for h2 in range(H2):
-        for w2 in range(W2):
-            for c in range(C):
-                h=int(h2/1.5)
-                w=int(w2/1.5)
-                img2[h2][w2][c]=img[h][w][c]
-    img2=np.clip(img2, 0, 255).astype(np.uint8)
-    return img2
 
-img = cv2.imread("image/imori.jpg")
-img2 = nearest_neighbor(img)
-cv2.imwrite("image/025.jpg", img2)
+def inter_nearest(image, a, b):
+    h0, w0, _ = image.shape
+    h1, w1 = int(h0 * a), int(w0 * b)
+    result = np.zeros((h1, w1, 3), np.uint8)
+    for i1 in range(h1):
+        for j1 in range(w1):
+            i0 = int(i1 / a)
+            j0 = int(j1 / b)
+            result[i1, j1] = image[i0, j0]
+    return result
+
+
+origin = cv2.imread("image/sample.png")
+result = inter_nearest(origin, 2.0, 3.5)
+cv2.imwrite("image/025.png", result)

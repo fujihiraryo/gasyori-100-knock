@@ -2,21 +2,26 @@ import cv2
 import numpy as np
 
 
-def skew(img0, dh, dw):
-    H0, W0, C = img0.shape
-    H, W = H0 + dh, W0 + dw
-    img1 = np.zeros((H, W, C))
-    for h in range(H):
-        for w in range(W):
-            for c in range(C):
-                h0 = (h - w * dh / H0) / (1 - (dh / H0) * (dw / W0))
-                w0 = (w - h * dw / W0) / (1 - (dh / H0) * (dw / W0))
-                h0, w0 = int(h0), int(w0)
-                if 0 <= w0 < W0 - 1 and 0 <= h0 < H0 - 1:
-                    img1[h][w][c] = img0[h0][w0][c]
-    return img1
+def affine(image, matrix):
+    h, w, _ = image.shape
+    result = np.zeros_like(image)
+    inverse = np.linalg.inv(matrix)
+    for i in range(h):
+        for j in range(w):
+            x, y, _ = np.dot(inverse, np.array([i, j, 1])).astype(np.int)
+            if 0 <= x < h and 0 <= y < w:
+                result[i, j] = image[x, y]
+            else:
+                result[i, j] = 0
+    return result
 
 
-img0 = cv2.imread("image/icon.jpg")
-img1 = skew(img0, 40, 60)
-cv2.imwrite("image/031.jpg", img1)
+def skew(image, dx, dy):
+    h, w, _ = image.shape
+    matrix = np.array([[1, dx / h, 0], [dy / w, 1, 0], [0, 0, 1]])
+    return affine(image, matrix)
+
+
+origin = cv2.imread("image/sample.png")
+result = skew(origin, 50, 50)
+cv2.imwrite("image/031.png", result)
